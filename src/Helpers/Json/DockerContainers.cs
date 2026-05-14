@@ -6,6 +6,5 @@ using Types;
 
 public class DockerContainers
 {
-    [JsonPropertyName("")]
-    public List<DockerContainer> Containers { get; set; }
+    [JsonPropertyName("")] public List<DockerContainer> Containers { get; set; }
 }
