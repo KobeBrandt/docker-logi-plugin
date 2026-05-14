@@ -1,15 +1,22 @@
-namespace Loupedeck.DockerPlugin;
-
-// This class can be used to connect the Loupedeck plugin to an application.
-
-public class DockerApplication : ClientApplication
+namespace Loupedeck.DockerPlugin
 {
-    // This method can be used to link the plugin to a Windows application.
-    protected override String GetProcessName() => "";
+    using System;
 
-    // This method can be used to link the plugin to a macOS application.
-    protected override String GetBundleName() => "";
+    // This class can be used to connect the Loupedeck plugin to an application.
 
-    // This method can be used to check whether the application is installed or not.
-    public override ClientApplicationStatus GetApplicationStatus() => ClientApplicationStatus.Unknown;
+    public class DockerApplication : ClientApplication
+    {
+        public DockerApplication()
+        {
+        }
+
+        // This method can be used to link the plugin to a Windows application.
+        protected override String GetProcessName() => "";
+
+        // This method can be used to link the plugin to a macOS application.
+        protected override String GetBundleName() => "";
+
+        // This method can be used to check whether the application is installed or not.
+        public override ClientApplicationStatus GetApplicationStatus() => ClientApplicationStatus.Unknown;
+    }
 }
