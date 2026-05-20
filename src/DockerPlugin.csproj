@@ -39,6 +39,8 @@
     <EmbeddedResource Include="Resources\actionicons\stop-solid-full.svg" />
     <None Remove="Resources\actionicons\stack.svg" />
     <EmbeddedResource Include="Resources\actionicons\stack.svg" />
+    <None Remove="Resources\actionicons\container.svg" />
+    <EmbeddedResource Include="Resources\actionicons\container.svg" />
   </ItemGroup>
 
   <Target Name="CopyPackage" AfterTargets="PostBuildEvent">
