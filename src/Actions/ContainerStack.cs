@@ -1,38 +1,56 @@
 ﻿namespace Loupedeck.DockerPlugin;
 
+using Helpers;
+
 public class ContainerStack : ActionEditorCommand
 {
+    private readonly Dictionary<String, String> _stacks = new();
     public ContainerStack()
     {
         this.Name = "ContainerStack";
-        this.DisplayName = "Container Stack";
-        this.GroupName = "Docker";
-        this.Description = "Toggle all containers in a Docker Compose stack";
+        this.DisplayName = "Stack";
+        this.Description = "Toggle all containers in a Docker stack";
 
         this.ActionEditor.AddControlEx(
-            new ActionEditorListbox("Service", "Service"));
+            new ActionEditorListbox("Stack", "Stack"));
 
         this.ActionEditor.ListboxItemsRequested += this.OnListboxItemsRequested;
+        this.ActionEditor.ControlValueChanged += this.OnControlValueChanged;
     }
 
     private void OnListboxItemsRequested(Object sender, ActionEditorListboxItemsRequestedEventArgs e)
     {
-        if (e.ControlName.EqualsNoCase("Service"))
+        if (e.ControlName.EqualsNoCase("Stack"))
         {
-            var projects = DockerWhisperer.GetAllComposeProjects();
-            if (projects != null)
+            var stacks = DockerWhisperer.GetAllComposeProjects();
+            if (stacks != null)
             {
-                foreach (var project in projects)
+                foreach (var s in stacks)
                 {
-                    e.AddItem(project, project, project);
+                    this._stacks[s] = s;
+                    e.AddItem(s, s, s);
                 }
             }
         }
     }
+    
+    private void OnControlValueChanged(Object sender, ActionEditorControlValueChangedEventArgs e)
+    {
+        if (e.ControlName.EqualsNoCase("Stack"))
+        {
+            var selectedStack = this._stacks[e.ActionEditorState.GetControlValue("Stack")];
+            e.ActionEditorState.SetDisplayName(selectedStack);
+        }
+    }
+    
+    protected override BitmapImage GetCommandImage(ActionEditorActionParameters actionParameters, Int32 imageWidth, Int32 imageHeight)
+    {
+            return BitmapHelper.MakeBitmapImage("stack.svg", imageWidth);
+    }
 
     protected override Boolean RunCommand(ActionEditorActionParameters actionParameters)
     {
-        if (actionParameters.TryGetString("Service", out var projectName))
+        if (actionParameters.TryGetString("Stack", out var projectName))
         {
             var containers = DockerWhisperer.GetContainersByProject(projectName);
             if (containers != null && containers.Count > 0)
@@ -54,11 +72,8 @@ public class ContainerStack : ActionEditorCommand
                         DockerWhisperer.StartContainer(c.Id).Wait();
                     }
                 }
-
-                return true;
             }
         }
-
         return false;
     }
 }

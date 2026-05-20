@@ -11,7 +11,6 @@ public class Container : ActionEditorCommand
     {
         this.Name = "Container";
         this.DisplayName = "Container";
-        this.GroupName = "Docker";
         this.Description = "Toggle a Docker container on/off";
 
         this.ActionEditor.AddControlEx(
