@@ -11,7 +11,6 @@ public class Container : ActionEditorCommand
     {
         this.Name = "Container";
         this.DisplayName = "Container";
-        this.GroupName = "Docker";
         this.Description = "Toggle a Docker container on/off";
 
         this.ActionEditor.AddControlEx(
@@ -52,16 +51,7 @@ public class Container : ActionEditorCommand
     protected override BitmapImage GetCommandImage(ActionEditorActionParameters actionParameters, Int32 imageWidth,
         Int32 imageHeight)
     {
-        PluginLog.Info("GetCommandImage");
-        if (!actionParameters.TryGetString("Container", out var containerId))
-        {
-            PluginLog.Info("E");
-            return BitmapHelper.MakeBitmapImage("play-solid-full.svg", imageWidth);
-        }
-        
-        PluginLog.Info($"Container state: {_containerStates[containerId]}");
-        return BitmapHelper.MakeBitmapImage(
-            this._containerStates[containerId] == "running" ? "play-solid-full.svg" : "stop-solid-full.svg", imageWidth);
+        return BitmapHelper.MakeBitmapImage("container.svg", imageWidth);
     }
 
     protected override Boolean RunCommand(ActionEditorActionParameters actionParameters)

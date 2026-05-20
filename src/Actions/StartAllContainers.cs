@@ -9,7 +9,7 @@ public class StartAllContainers : PluginDynamicCommand
     private List<DockerContainer> _containers;
 
     public StartAllContainers()
-        : base("Start all containers", "Start all the docker containers with a button press", "Containers")
+        : base("Start all containers", "Start all the docker containers with a button press", "")
     {
     }
 

@@ -9,7 +9,7 @@ public class StopAllContainers : PluginDynamicCommand
     private List<DockerContainer> _containers;
 
     public StopAllContainers()
-        : base("Stop all containers", "Stop all the docker containers with a button press", "Containers")
+        : base("Stop all containers", "Stop all the docker containers with a button press", "")
     {
     }
 

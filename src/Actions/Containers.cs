@@ -5,7 +5,8 @@ public class Containers : PluginDynamicFolder
     public Containers()
     {
         this.DisplayName = "Containers";
-        this.GroupName = "Containers";
+        this.GroupName = "";
+        this.Description = "A dynamic folder that shows all containers";
     }
 
     public override PluginDynamicFolderNavigation GetNavigationArea(DeviceType _) =>
