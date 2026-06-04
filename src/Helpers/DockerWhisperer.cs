@@ -1,5 +1,6 @@
 ﻿namespace Loupedeck.DockerPlugin;
 
+using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 
@@ -104,5 +105,48 @@ public static class DockerWhisperer
         }
 
         return containers.Where(c => c.Labels?.GetValueOrDefault("com.docker.compose.project") == projectName).ToList();
+    }
+    
+    public static bool IsDockerRunning()
+    {
+        try
+        {
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "docker",
+                    Arguments = "info",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                }
+            };
+            process.Start();
+            process.WaitForExit();
+            return process.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public static bool IsDockerApiAvailable()
+    {
+        try
+        {
+            var request = WebRequest.Create(Url + "/version");
+            request.Timeout = 1000; // 1-second timeout
+            using (var response = request.GetResponse())
+            {
+                return true;
+            }
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

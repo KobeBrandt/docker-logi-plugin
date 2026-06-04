@@ -56,31 +56,42 @@ public class Container : ActionEditorCommand
 
     protected override Boolean RunCommand(ActionEditorActionParameters actionParameters)
     {
-        if (actionParameters.TryGetString("Container", out var containerId))
+        if (!DockerWhisperer.IsDockerRunning())
         {
-            var containers = DockerWhisperer.GetAllContainers().Result;
-            var container = containers?.FirstOrDefault(c => c.Id == containerId);
-            if (container != null)
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
+        }
+        else if (!DockerWhisperer.IsDockerApiAvailable())
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker API not found");
+        }
+        else
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Normal, null);
+            if (actionParameters.TryGetString("Container", out var containerId))
             {
-                PluginLog.Info($"Container {container.Id} state: {container.State}");
-                if (container.State == "running")
+                var containers = DockerWhisperer.GetAllContainers().Result;
+                var container = containers?.FirstOrDefault(c => c.Id == containerId);
+                if (container != null)
                 {
-                    var result = DockerWhisperer.StopContainer(container.Id).Result;
-                    _containerStates[container.Id] = "stopped";
-                    PluginLog.Info($"Stop result: {result}");
-                }
-                else
-                {
-                    var result = DockerWhisperer.StartContainer(container.Id).Result;
-                    _containerStates[container.Id] = "running";
-                    PluginLog.Info($"Start result: {result}");
-                }
+                    PluginLog.Info($"Container {container.Id} state: {container.State}");
+                    if (container.State == "running")
+                    {
+                        var result = DockerWhisperer.StopContainer(container.Id).Result;
+                        _containerStates[container.Id] = "stopped";
+                        PluginLog.Info($"Stop result: {result}");
+                    }
+                    else
+                    {
+                        var result = DockerWhisperer.StartContainer(container.Id).Result;
+                        _containerStates[container.Id] = "running";
+                        PluginLog.Info($"Start result: {result}");
+                    }
 
-                this.ActionImageChanged();
-                return true;
+                    this.ActionImageChanged();
+                    return true;
+                }
             }
         }
-
         return false;
     }
 }
