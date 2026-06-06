@@ -35,6 +35,7 @@ namespace Loupedeck.DockerPlugin
 
         public void dockerCheck()
         {
+            Thread.Sleep(5000);
             if (!DockerWhisperer.IsDockerRunning())
             {
                 this.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
