@@ -25,11 +25,29 @@ namespace Loupedeck.DockerPlugin
         // This method is called when the plugin is loaded.
         public override void Load()
         {
+            dockerCheck();
         }
 
         // This method is called when the plugin is unloaded.
         public override void Unload()
         {
+        }
+
+        public void dockerCheck()
+        {
+            Thread.Sleep(5000);
+            if (!DockerWhisperer.IsDockerRunning())
+            {
+                this.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
+            }
+            else if (!DockerWhisperer.IsDockerApiAvailable())
+            {
+                this.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker API not found");
+            }
+            else
+            {
+                this.OnPluginStatusChanged(Loupedeck.PluginStatus.Normal, null);
+            }
         }
     }
 }

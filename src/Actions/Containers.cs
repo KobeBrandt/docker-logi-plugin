@@ -38,24 +38,37 @@ public class Containers : PluginDynamicFolder
 
     public override void RunCommand(String actionParameter)
     {
-        if (actionParameter == NavigateUpActionName)
+        if (!DockerWhisperer.IsDockerRunning())
         {
-            return;
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
         }
+        else if (!DockerWhisperer.IsDockerApiAvailable())
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker API not found");
+        }
+        else
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Normal, null);
+            if (actionParameter == NavigateUpActionName)
+            {
+                return;
+            }
 
-        var containers = DockerWhisperer.GetAllContainers().Result;
-        var container =
-            containers?.FirstOrDefault(c => (c.Names?.FirstOrDefault()?.TrimStart('/') ?? c.Id) == actionParameter);
-        if (container != null)
-        {
-            if (container.State == "running")
+            var containers = DockerWhisperer.GetAllContainers().Result;
+            var container =
+                containers?.FirstOrDefault(c => (c.Names?.FirstOrDefault()?.TrimStart('/') ?? c.Id) == actionParameter);
+            if (container != null)
             {
-                DockerWhisperer.StopContainer(container.Id).Wait();
-            }
-            else
-            {
-                DockerWhisperer.StartContainer(container.Id).Wait();
+                if (container.State == "running")
+                {
+                    DockerWhisperer.StopContainer(container.Id).Wait();
+                }
+                else
+                {
+                    DockerWhisperer.StartContainer(container.Id).Wait();
+                }
             }
         }
+        
     }
 }

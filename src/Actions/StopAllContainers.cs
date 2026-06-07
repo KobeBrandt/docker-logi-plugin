@@ -18,10 +18,22 @@ public class StopAllContainers : PluginDynamicCommand
 
     protected override void RunCommand(String actionParameter)
     {
-        this._containers = DockerWhisperer.GetAllContainers().Result;
-        foreach (var container in this._containers)
+        if (!DockerWhisperer.IsDockerRunning())
         {
-            DockerWhisperer.StopContainer(container.Id).Wait();
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
+        }
+        else if (!DockerWhisperer.IsDockerApiAvailable())
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker API not found");
+        }
+        else
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Normal, null);
+            this._containers = DockerWhisperer.GetAllContainers().Result;
+            foreach (var container in this._containers)
+            {
+                DockerWhisperer.StopContainer(container.Id).Wait();
+            }
         }
     }
 }

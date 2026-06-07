@@ -50,30 +50,43 @@ public class ContainerStack : ActionEditorCommand
 
     protected override Boolean RunCommand(ActionEditorActionParameters actionParameters)
     {
-        if (actionParameters.TryGetString("Stack", out var projectName))
+        if (!DockerWhisperer.IsDockerRunning())
         {
-            var containers = DockerWhisperer.GetContainersByProject(projectName);
-            if (containers != null && containers.Count > 0)
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
+        }
+        else if (!DockerWhisperer.IsDockerApiAvailable())
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker API not found");
+        }
+        else
+        {
+            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Normal, null);
+            if (actionParameters.TryGetString("Stack", out var projectName))
             {
-                var running = containers.Where(c => c.State == "running").ToList();
-                var stopped = containers.Where(c => c.State != "running").ToList();
+                var containers = DockerWhisperer.GetContainersByProject(projectName);
+                if (containers != null && containers.Count > 0)
+                {
+                    var running = containers.Where(c => c.State == "running").ToList();
+                    var stopped = containers.Where(c => c.State != "running").ToList();
 
-                if (running.Count > stopped.Count)
-                {
-                    foreach (var c in running)
+                    if (running.Count > stopped.Count)
                     {
-                        DockerWhisperer.StopContainer(c.Id).Wait();
+                        foreach (var c in running)
+                        {
+                            DockerWhisperer.StopContainer(c.Id).Wait();
+                        }
                     }
-                }
-                else
-                {
-                    foreach (var c in stopped)
+                    else
                     {
-                        DockerWhisperer.StartContainer(c.Id).Wait();
+                        foreach (var c in stopped)
+                        {
+                            DockerWhisperer.StartContainer(c.Id).Wait();
+                        }
                     }
                 }
             }
         }
+        
         return false;
     }
 }
