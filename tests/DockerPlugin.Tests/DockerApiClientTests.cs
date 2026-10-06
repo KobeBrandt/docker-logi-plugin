@@ -14,20 +14,25 @@ public class DockerApiClientTests
     private const String ContainerId = "abc123";
     private const String ContainerListJson = """[{"Id":"abc123","Names":["/web"],"State":"running"}]""";
     private const Int32 FailedExitCode = 1;
+    private const String CliPath = "/usr/local/bin/docker";
 
     private static DockerApiClient CreateClient(FakeHttpMessageHandler handler, IProcessRunner runner = null) =>
-        new(handler.CreateClient(), runner ?? FakeProcessRunner.ExitingWith(DockerConstants.CliSuccessExitCode));
+        new(handler.CreateClient(), runner ?? FakeProcessRunner.ExitingWith(DockerConstants.CliSuccessExitCode), CliPath);
 
     private static DockerApiClient CreateClient(IProcessRunner runner) =>
         CreateClient(FakeHttpMessageHandler.Returning(HttpStatusCode.OK), runner);
 
     [Fact]
     public void Constructor_NullHttpClient_Throws() =>
-        Assert.Throws<ArgumentNullException>(() => new DockerApiClient(null, FakeProcessRunner.ExitingWith(0)));
+        Assert.Throws<ArgumentNullException>(() => new DockerApiClient(null, FakeProcessRunner.ExitingWith(0), CliPath));
 
     [Fact]
     public void Constructor_NullProcessRunner_Throws() =>
-        Assert.Throws<ArgumentNullException>(() => new DockerApiClient(new HttpClient(), null));
+        Assert.Throws<ArgumentNullException>(() => new DockerApiClient(new HttpClient(), null, CliPath));
+
+    [Fact]
+    public void Constructor_NullCliExecutable_Throws() =>
+        Assert.Throws<ArgumentNullException>(() => new DockerApiClient(new HttpClient(), FakeProcessRunner.ExitingWith(0), null));
 
     [Fact]
     public async Task GetAllContainers_Success_ParsesContainers()
@@ -86,6 +91,16 @@ public class DockerApiClientTests
     [Fact]
     public void IsDockerRunning_SuccessExitCode_ReturnsTrue() =>
         Assert.True(CreateClient(FakeProcessRunner.ExitingWith(DockerConstants.CliSuccessExitCode)).IsDockerRunning());
+
+    [Fact]
+    public void IsDockerRunning_RunsConfiguredCliExecutable()
+    {
+        var runner = FakeProcessRunner.ExitingWith(DockerConstants.CliSuccessExitCode);
+
+        CreateClient(runner).IsDockerRunning();
+
+        Assert.Equal(CliPath, runner.LastFileName);
+    }
 
     [Fact]
     public void IsDockerRunning_FailedExitCode_ReturnsFalse() =>

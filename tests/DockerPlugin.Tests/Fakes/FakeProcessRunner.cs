@@ -12,5 +12,11 @@ public sealed class FakeProcessRunner : IProcessRunner
 
     public static FakeProcessRunner Throwing(Exception exception) => new(() => throw exception);
 
-    public Int32 RunAndGetExitCode(String fileName, String arguments) => this._run();
+    public String LastFileName { get; private set; }
+
+    public Int32 RunAndGetExitCode(String fileName, String arguments)
+    {
+        this.LastFileName = fileName;
+        return this._run();
+    }
 }
