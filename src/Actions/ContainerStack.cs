@@ -1,92 +1,50 @@
-﻿namespace Loupedeck.DockerPlugin;
+namespace Loupedeck.DockerPlugin;
 
 using Helpers;
 
 public class ContainerStack : ActionEditorCommand
 {
-    private readonly Dictionary<String, String> _stacks = new();
+    private const String StackControlName = "Stack";
+    private const String IconFileName = "stack.svg";
+
     public ContainerStack()
     {
         this.Name = "ContainerStack";
         this.DisplayName = "Stack";
         this.Description = "Toggle all containers in a Docker stack";
 
-        this.ActionEditor.AddControlEx(
-            new ActionEditorListbox("Stack", "Stack"));
-
+        this.ActionEditor.AddControlEx(new ActionEditorListbox(StackControlName, StackControlName));
         this.ActionEditor.ListboxItemsRequested += this.OnListboxItemsRequested;
         this.ActionEditor.ControlValueChanged += this.OnControlValueChanged;
     }
 
     private void OnListboxItemsRequested(Object sender, ActionEditorListboxItemsRequestedEventArgs e)
     {
-        if (e.ControlName.EqualsNoCase("Stack"))
+        if (!e.ControlName.EqualsNoCase(StackControlName))
         {
-            var stacks = DockerWhisperer.GetAllComposeProjects();
-            if (stacks != null)
-            {
-                foreach (var s in stacks)
-                {
-                    this._stacks[s] = s;
-                    e.AddItem(s, s, s);
-                }
-            }
+            return;
+        }
+
+        var containers = DockerServices.Client.GetAllContainers().Result ?? [];
+        foreach (var projectName in ContainerQueries.GetComposeProjects(containers))
+        {
+            e.AddItem(projectName, projectName, projectName);
         }
     }
-    
+
     private void OnControlValueChanged(Object sender, ActionEditorControlValueChangedEventArgs e)
     {
-        if (e.ControlName.EqualsNoCase("Stack"))
+        if (e.ControlName.EqualsNoCase(StackControlName))
         {
-            var selectedStack = this._stacks[e.ActionEditorState.GetControlValue("Stack")];
-            e.ActionEditorState.SetDisplayName(selectedStack);
+            e.ActionEditorState.SetDisplayName(e.ActionEditorState.GetControlValue(StackControlName));
         }
-    }
-    
-    protected override BitmapImage GetCommandImage(ActionEditorActionParameters actionParameters, Int32 imageWidth, Int32 imageHeight)
-    {
-            return BitmapHelper.MakeBitmapImage("stack.svg", imageWidth);
     }
 
-    protected override Boolean RunCommand(ActionEditorActionParameters actionParameters)
-    {
-        if (!DockerWhisperer.IsDockerRunning())
-        {
-            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
-        }
-        else if (!DockerWhisperer.IsDockerApiAvailable())
-        {
-            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker API not found");
-        }
-        else
-        {
-            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Normal, null);
-            if (actionParameters.TryGetString("Stack", out var projectName))
-            {
-                var containers = DockerWhisperer.GetContainersByProject(projectName);
-                if (containers != null && containers.Count > 0)
-                {
-                    var running = containers.Where(c => c.State == "running").ToList();
-                    var stopped = containers.Where(c => c.State != "running").ToList();
+    protected override BitmapImage GetCommandImage(ActionEditorActionParameters actionParameters, Int32 imageWidth, Int32 imageHeight) =>
+        BitmapHelper.MakeBitmapImage(IconFileName);
 
-                    if (running.Count > stopped.Count)
-                    {
-                        foreach (var c in running)
-                        {
-                            DockerWhisperer.StopContainer(c.Id).Wait();
-                        }
-                    }
-                    else
-                    {
-                        foreach (var c in stopped)
-                        {
-                            DockerWhisperer.StartContainer(c.Id).Wait();
-                        }
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
+    protected override Boolean RunCommand(ActionEditorActionParameters actionParameters) =>
+        this.Plugin.EnsureDockerReady()
+        && actionParameters.TryGetString(StackControlName, out var projectName)
+        && DockerServices.Operations.ToggleComposeProject(projectName);
 }
