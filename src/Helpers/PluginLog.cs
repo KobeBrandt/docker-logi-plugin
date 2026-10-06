@@ -2,8 +2,6 @@ namespace Loupedeck.DockerPlugin
 {
     using System;
 
-    // A helper class that enables logging from the plugin code.
-
     internal static class PluginLog
     {
         private static PluginLogFile _pluginLogFile;

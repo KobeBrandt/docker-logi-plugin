@@ -1,11 +1,16 @@
-﻿namespace Loupedeck.DockerPlugin;
+namespace Loupedeck.DockerPlugin;
 
 using Helpers;
 
+using Types;
+
 public class Container : ActionEditorCommand
 {
-    private readonly Dictionary<String, String> _containerStates = new();
-    private readonly Dictionary<String, String> _containers = new();
+    private const String ContainerControlName = "Container";
+    private const String IconFileName = "container.svg";
+    private const String RunningSuffix = " [Running]";
+
+    private readonly Dictionary<String, String> _containerNamesById = new();
 
     public Container()
     {
@@ -13,85 +18,54 @@ public class Container : ActionEditorCommand
         this.DisplayName = "Container";
         this.Description = "Toggle a Docker container on/off";
 
-        this.ActionEditor.AddControlEx(
-            new ActionEditorListbox("Container", "Container"));
-
+        this.ActionEditor.AddControlEx(new ActionEditorListbox(ContainerControlName, ContainerControlName));
         this.ActionEditor.ListboxItemsRequested += this.OnListboxItemsRequested;
         this.ActionEditor.ControlValueChanged += this.OnControlValueChanged;
     }
 
     private void OnListboxItemsRequested(Object sender, ActionEditorListboxItemsRequestedEventArgs e)
     {
-        if (e.ControlName.EqualsNoCase("Container"))
+        if (!e.ControlName.EqualsNoCase(ContainerControlName))
         {
-            var containers = DockerWhisperer.GetAllContainers().Result;
-            if (containers != null)
-            {
-                foreach (var c in containers)
-                {
-                    var name = c.Names?.FirstOrDefault()?.TrimStart('/') ?? c.Id;
-                    var running = c.State == "running" ? " [Running]" : "";
-                    this._containers[c.Id] = name;
-                    this._containerStates[c.Id] = c.State ?? "unknown";
-                    e.AddItem(c.Id, name, $"{name}{running}");
-                }
-            }
+            return;
         }
+
+        var containers = DockerServices.Client.GetAllContainers().Result ?? [];
+        foreach (var container in containers)
+        {
+            this.AddListboxItem(e, container);
+        }
+    }
+
+    private void AddListboxItem(ActionEditorListboxItemsRequestedEventArgs e, DockerContainer container)
+    {
+        var name = ContainerQueries.GetDisplayName(container);
+        var stateSuffix = ContainerQueries.IsRunning(container) ? RunningSuffix : String.Empty;
+        this._containerNamesById[container.Id] = name;
+        e.AddItem(container.Id, name, name + stateSuffix);
     }
 
     private void OnControlValueChanged(Object sender, ActionEditorControlValueChangedEventArgs e)
     {
-        if (e.ControlName.EqualsNoCase("Container"))
+        var containerId = e.ActionEditorState.GetControlValue(ContainerControlName);
+        if (e.ControlName.EqualsNoCase(ContainerControlName) && this._containerNamesById.TryGetValue(containerId, out var name))
         {
-            var selectedContainer = this._containers[e.ActionEditorState.GetControlValue("Container")];
-            e.ActionEditorState.SetDisplayName(selectedContainer);
+            e.ActionEditorState.SetDisplayName(name);
         }
     }
 
-    protected override BitmapImage GetCommandImage(ActionEditorActionParameters actionParameters, Int32 imageWidth,
-        Int32 imageHeight)
-    {
-        return BitmapHelper.MakeBitmapImage("container.svg", imageWidth);
-    }
+    protected override BitmapImage GetCommandImage(ActionEditorActionParameters actionParameters, Int32 imageWidth, Int32 imageHeight) =>
+        BitmapHelper.MakeBitmapImage(IconFileName);
 
     protected override Boolean RunCommand(ActionEditorActionParameters actionParameters)
     {
-        if (!DockerWhisperer.IsDockerRunning())
+        if (!this.Plugin.EnsureDockerReady() || !actionParameters.TryGetString(ContainerControlName, out var containerId))
         {
-            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker not running");
+            return false;
         }
-        else if (!DockerWhisperer.IsDockerApiAvailable())
-        {
-            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Error, "Docker API not found");
-        }
-        else
-        {
-            this.Plugin.OnPluginStatusChanged(Loupedeck.PluginStatus.Normal, null);
-            if (actionParameters.TryGetString("Container", out var containerId))
-            {
-                var containers = DockerWhisperer.GetAllContainers().Result;
-                var container = containers?.FirstOrDefault(c => c.Id == containerId);
-                if (container != null)
-                {
-                    PluginLog.Info($"Container {container.Id} state: {container.State}");
-                    if (container.State == "running")
-                    {
-                        var result = DockerWhisperer.StopContainer(container.Id).Result;
-                        _containerStates[container.Id] = "stopped";
-                        PluginLog.Info($"Stop result: {result}");
-                    }
-                    else
-                    {
-                        var result = DockerWhisperer.StartContainer(container.Id).Result;
-                        _containerStates[container.Id] = "running";
-                        PluginLog.Info($"Start result: {result}");
-                    }
 
-                    this.ActionImageChanged();
-                    return true;
-                }
-            }
-        }
-        return false;
+        var toggled = DockerServices.Operations.ToggleById(containerId);
+        this.ActionImageChanged();
+        return toggled;
     }
 }
