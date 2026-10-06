@@ -10,11 +10,13 @@ public sealed class DockerApiClient : IDockerClient
 {
     private readonly HttpClient _httpClient;
     private readonly IProcessRunner _processRunner;
+    private readonly String _cliExecutable;
 
-    public DockerApiClient(HttpClient httpClient, IProcessRunner processRunner)
+    public DockerApiClient(HttpClient httpClient, IProcessRunner processRunner, String cliExecutable)
     {
         this._httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         this._processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
+        this._cliExecutable = cliExecutable ?? throw new ArgumentNullException(nameof(cliExecutable));
     }
 
     public async Task<List<DockerContainer>> GetAllContainers()
@@ -48,7 +50,7 @@ public sealed class DockerApiClient : IDockerClient
     {
         try
         {
-            var exitCode = this._processRunner.RunAndGetExitCode(DockerConstants.CliExecutable, DockerConstants.CliInfoArguments);
+            var exitCode = this._processRunner.RunAndGetExitCode(this._cliExecutable, DockerConstants.CliInfoArguments);
             return exitCode == DockerConstants.CliSuccessExitCode;
         }
         catch (Exception ex) when (ex is Win32Exception or InvalidOperationException)
