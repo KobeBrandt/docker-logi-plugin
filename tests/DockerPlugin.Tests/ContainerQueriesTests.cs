@@ -27,6 +27,17 @@ public class ContainerQueriesTests
     }
 
     [Fact]
+    public void HasDisplayName_MatchesNameWithoutPrefix() =>
+        Assert.True(ContainerQueries.HasDisplayName("web")(ContainerFactory.Running("web")));
+
+    [Fact]
+    public void IsMostlyRunning_RequiresStrictMajority()
+    {
+        Assert.True(ContainerQueries.IsMostlyRunning([ContainerFactory.Running("a"), ContainerFactory.Running("b"), ContainerFactory.Stopped("c")]));
+        Assert.False(ContainerQueries.IsMostlyRunning([ContainerFactory.Running("a"), ContainerFactory.Stopped("b")]));
+    }
+
+    [Fact]
     public void GetComposeProjects_ReturnsDistinctLabelledProjects()
     {
         var containers = new[]

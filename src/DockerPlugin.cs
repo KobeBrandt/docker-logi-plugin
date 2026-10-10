@@ -2,6 +2,8 @@ namespace Loupedeck.DockerPlugin
 {
     using System;
 
+    using Helpers;
+
     public class DockerPlugin : Plugin
     {
         public override Boolean UsesApplicationApiOnly => true;
@@ -14,12 +16,8 @@ namespace Loupedeck.DockerPlugin
             PluginResources.Init(this.Assembly);
         }
 
-        public override void Load()
-        {
-        }
+        public override void Load() => DockerServices.StatePoller.Start();
 
-        public override void Unload()
-        {
-        }
+        public override void Unload() => DockerServices.StatePoller.Stop();
     }
 }

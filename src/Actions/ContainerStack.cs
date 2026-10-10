@@ -2,49 +2,21 @@ namespace Loupedeck.DockerPlugin;
 
 using Helpers;
 
-public class ContainerStack : ActionEditorCommand
+using Types;
+
+public class ContainerStack : DockerToggleCommand
 {
-    private const String StackControlName = "Stack";
-    private const String IconFileName = "stack.svg";
-
     public ContainerStack()
+        : base("Stack", "Toggle all containers in a Docker stack", ActionIcons.Stack)
     {
-        this.Name = "ContainerStack";
-        this.DisplayName = "Stack";
-        this.Description = "Toggle all containers in a Docker stack";
-
-        this.ActionEditor.AddControlEx(new ActionEditorListbox(StackControlName, StackControlName));
-        this.ActionEditor.ListboxItemsRequested += this.OnListboxItemsRequested;
-        this.ActionEditor.ControlValueChanged += this.OnControlValueChanged;
     }
 
-    private void OnListboxItemsRequested(Object sender, ActionEditorListboxItemsRequestedEventArgs e)
-    {
-        if (!e.ControlName.EqualsNoCase(StackControlName))
-        {
-            return;
-        }
+    protected override IEnumerable<String> GetParameterNames(List<DockerContainer> containers) =>
+        ContainerQueries.GetComposeProjects(containers);
 
-        var containers = DockerServices.Client.GetAllContainers().Result ?? [];
-        foreach (var projectName in ContainerQueries.GetComposeProjects(containers))
-        {
-            e.AddItem(projectName, projectName, projectName);
-        }
-    }
+    protected override ToggleAction GetToggleAction(String parameterName) =>
+        DockerServices.ToggleActions.ForComposeProject(parameterName);
 
-    private void OnControlValueChanged(Object sender, ActionEditorControlValueChangedEventArgs e)
-    {
-        if (e.ControlName.EqualsNoCase(StackControlName))
-        {
-            e.ActionEditorState.SetDisplayName(e.ActionEditorState.GetControlValue(StackControlName));
-        }
-    }
-
-    protected override BitmapImage GetCommandImage(ActionEditorActionParameters actionParameters, Int32 imageWidth, Int32 imageHeight) =>
-        BitmapHelper.MakeBitmapImage(IconFileName);
-
-    protected override Boolean RunCommand(ActionEditorActionParameters actionParameters) =>
-        this.Plugin.EnsureDockerReady()
-        && actionParameters.TryGetString(StackControlName, out var projectName)
-        && DockerServices.Operations.ToggleComposeProject(projectName);
+    protected override Boolean Toggle(String parameterName) =>
+        DockerServices.Operations.ToggleComposeProject(parameterName);
 }
