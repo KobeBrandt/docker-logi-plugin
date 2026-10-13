@@ -9,11 +9,8 @@ public sealed class ContainerOperations
     public ContainerOperations(IDockerClient client) =>
         this._client = client ?? throw new ArgumentNullException(nameof(client));
 
-    public Boolean ToggleById(String containerId) =>
-        this.ToggleFirstMatch(container => container.Id == containerId, containerId);
-
     public Boolean ToggleByDisplayName(String displayName) =>
-        this.ToggleFirstMatch(container => ContainerQueries.GetDisplayName(container) == displayName, displayName);
+        this.ToggleFirstMatch(ContainerQueries.HasDisplayName(displayName), displayName);
 
     public Boolean StartAll() => this.ApplyToAllContainers(this._client.StartContainer);
 
@@ -31,8 +28,7 @@ public sealed class ContainerOperations
 
         var running = projectContainers.Where(ContainerQueries.IsRunning).ToList();
         var stopped = projectContainers.Except(running).ToList();
-        // Majority vote: a mostly running stack is stopped, otherwise the stopped part is started.
-        return running.Count > stopped.Count
+        return ContainerQueries.IsMostlyRunning(projectContainers)
             ? ApplyToEach(running, this._client.StopContainer)
             : ApplyToEach(stopped, this._client.StartContainer);
     }

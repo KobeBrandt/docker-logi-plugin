@@ -18,11 +18,11 @@ public class ContainerOperationsTests
     public void Constructor_NullClient_Throws() => Assert.Throws<ArgumentNullException>(() => new ContainerOperations(null));
 
     [Fact]
-    public void ToggleById_RunningContainer_StopsIt()
+    public void ToggleByDisplayName_RunningContainer_StopsIt()
     {
         this._client.Containers = [ContainerFactory.Running("a")];
 
-        Assert.True(this.Operations.ToggleById("a"));
+        Assert.True(this.Operations.ToggleByDisplayName("a"));
         Assert.Equal(["a"], this._client.StoppedIds);
     }
 
@@ -36,23 +36,23 @@ public class ContainerOperationsTests
     }
 
     [Fact]
-    public void ToggleById_UnknownContainer_ReturnsFalse() => Assert.False(this.Operations.ToggleById("missing"));
+    public void ToggleByDisplayName_UnknownContainer_ReturnsFalse() => Assert.False(this.Operations.ToggleByDisplayName("missing"));
 
     [Fact]
-    public void ToggleById_ListingFailed_ReturnsFalse()
+    public void ToggleByDisplayName_ListingFailed_ReturnsFalse()
     {
         this._client.Containers = null;
 
-        Assert.False(this.Operations.ToggleById("a"));
+        Assert.False(this.Operations.ToggleByDisplayName("a"));
     }
 
     [Fact]
-    public void ToggleById_DockerRejectsRequest_ReturnsFalse()
+    public void ToggleByDisplayName_DockerRejectsRequest_ReturnsFalse()
     {
         this._client.Containers = [ContainerFactory.Stopped("a")];
         this._client.FailingContainerIds.Add("a");
 
-        Assert.False(this.Operations.ToggleById("a"));
+        Assert.False(this.Operations.ToggleByDisplayName("a"));
     }
 
     [Fact]

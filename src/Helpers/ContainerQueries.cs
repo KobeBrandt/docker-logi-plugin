@@ -9,6 +9,13 @@ public static class ContainerQueries
 
     public static Boolean IsRunning(DockerContainer container) => container.State == DockerConstants.RunningState;
 
+    public static Func<DockerContainer, Boolean> HasDisplayName(String displayName) =>
+        container => GetDisplayName(container) == displayName;
+
+    // Majority vote: a stack that is mostly running counts as running, so toggling it stops it.
+    public static Boolean IsMostlyRunning(IReadOnlyCollection<DockerContainer> containers) =>
+        containers.Count(IsRunning) > containers.Count(container => !IsRunning(container));
+
     public static List<String> GetComposeProjects(IEnumerable<DockerContainer> containers) =>
         containers
             .Select(GetComposeProject)
