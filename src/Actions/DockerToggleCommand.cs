@@ -6,6 +6,8 @@ using Types;
 
 public abstract class DockerToggleCommand : PluginDynamicCommand
 {
+    private const String CachedParameterNamesSettingFormat = "CachedParameterNames.{0}";
+
     private readonly String _parameterGroupName;
     private readonly String _unknownStateIcon;
     private readonly ParameterNamesTracker _parameterNames = new();
@@ -27,7 +29,8 @@ public abstract class DockerToggleCommand : PluginDynamicCommand
     protected override Boolean OnLoad()
     {
         DockerServices.StateMonitor.StatesChanged += this.OnContainerStatesChanged;
-        DockerServices.StateMonitor.RefreshIfNeverLoaded();
+        this.LoadCachedParameterNames();
+        DockerServices.StateMonitor.RefreshIfNeverLoaded(DockerConstants.ActionLoadRefreshTimeout);
         this.SyncParameters();
         return base.OnLoad();
     }
@@ -46,7 +49,7 @@ public abstract class DockerToggleCommand : PluginDynamicCommand
 
     protected override void RunCommand(String actionParameter)
     {
-        if (actionParameter == null || !this.Plugin.EnsureDockerReady())
+        if (actionParameter == null || !DockerServices.StatusReporter.EnsureDockerReady())
         {
             return;
         }
@@ -65,12 +68,32 @@ public abstract class DockerToggleCommand : PluginDynamicCommand
         this.ActionImageChanged();
     }
 
+    private String CachedParameterNamesSetting => String.Format(CachedParameterNamesSettingFormat, this._parameterGroupName);
+
+    // Options+ drops actions whose load takes too long, so cached names cover loads where Docker is not reachable yet.
+    private void LoadCachedParameterNames()
+    {
+        if (this.Plugin.TryGetPluginSetting(this.CachedParameterNamesSetting, out var json)
+            && ParameterNamesSerializer.TryDeserialize(json, out var names))
+        {
+            this.ApplyParameterNames(names);
+        }
+    }
+
     private void SyncParameters()
     {
         var containers = DockerServices.StateMonitor.Containers;
-        if (containers == null || !this._parameterNames.UpdateIfChanged(this.GetParameterNames(containers)))
+        if (containers != null && this.ApplyParameterNames(this.GetParameterNames(containers)))
         {
-            return;
+            this.Plugin.SetPluginSetting(this.CachedParameterNamesSetting, ParameterNamesSerializer.Serialize(this._parameterNames.Names));
+        }
+    }
+
+    private Boolean ApplyParameterNames(IEnumerable<String> names)
+    {
+        if (!this._parameterNames.UpdateIfChanged(names))
+        {
+            return false;
         }
 
         this.RemoveAllParameters();
@@ -81,5 +104,6 @@ public abstract class DockerToggleCommand : PluginDynamicCommand
 
         this.ParametersChanged();
         PluginLog.Info($"{this._parameterGroupName} parameters updated: {this._parameterNames.Names.Count}");
+        return true;
     }
 }

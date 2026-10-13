@@ -14,7 +14,7 @@ public class StopAllContainers : PluginDynamicCommand
 
     protected override void RunCommand(String actionParameter)
     {
-        if (this.Plugin.EnsureDockerReady())
+        if (DockerServices.StatusReporter.EnsureDockerReady())
         {
             DockerServices.Operations.StopAll();
         }

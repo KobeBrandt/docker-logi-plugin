@@ -26,11 +26,21 @@ public sealed class ContainerStateMonitor
         }
     }
 
-    public void RefreshIfNeverLoaded()
+    // Bounded so a slow or refused Docker connection cannot stall action loading; a late result still raises StatesChanged.
+    public void RefreshIfNeverLoaded(TimeSpan maxWait)
     {
-        if (this._containers == null)
+        if (this._containers != null)
         {
-            this.Refresh();
+            return;
+        }
+
+        try
+        {
+            Task.Run(this.Refresh).Wait(maxWait);
+        }
+        catch (AggregateException ex)
+        {
+            PluginLog.Error(ex, "Initial container listing failed");
         }
     }
 

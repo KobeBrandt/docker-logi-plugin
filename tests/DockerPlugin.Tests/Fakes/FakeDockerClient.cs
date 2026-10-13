@@ -20,8 +20,13 @@ public sealed class FakeDockerClient : IDockerClient
 
     public Exception ListingFailure { get; set; }
 
-    public Task<List<DockerContainer>> GetAllContainers() =>
-        this.ListingFailure == null ? Task.FromResult(this.Containers) : Task.FromException<List<DockerContainer>>(this.ListingFailure);
+    public Task ListingGate { get; set; } = Task.CompletedTask;
+
+    public async Task<List<DockerContainer>> GetAllContainers()
+    {
+        await this.ListingGate;
+        return this.ListingFailure == null ? this.Containers : throw this.ListingFailure;
+    }
 
     public Task<Boolean> StartContainer(String containerId) => this.Record(this.StartedIds, containerId);
 

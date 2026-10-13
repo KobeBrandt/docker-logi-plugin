@@ -11,4 +11,8 @@ public static class DockerServices
     public static ContainerStatePoller StatePoller { get; } = new(StateMonitor.Refresh, DockerConstants.ContainerStatePollInterval);
 
     public static ToggleActionResolver ToggleActions { get; } = new(StateMonitor);
+
+    public static PluginStatusReporter StatusReporter { get; } = new(Client);
+
+    public static ContainerStatePoller ReadinessPoller { get; } = new(() => StatusReporter.CheckAndReport(), DockerConstants.ReadinessPollInterval);
 }
