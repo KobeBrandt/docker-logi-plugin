@@ -16,8 +16,18 @@ namespace Loupedeck.DockerPlugin
             PluginResources.Init(this.Assembly);
         }
 
-        public override void Load() => DockerServices.StatePoller.Start();
+        public override void Load()
+        {
+            DockerServices.StatusReporter.StatusChanged += this.OnPluginStatusChanged;
+            DockerServices.ReadinessPoller.Start();
+            DockerServices.StatePoller.Start();
+        }
 
-        public override void Unload() => DockerServices.StatePoller.Stop();
+        public override void Unload()
+        {
+            DockerServices.StatePoller.Stop();
+            DockerServices.ReadinessPoller.Stop();
+            DockerServices.StatusReporter.StatusChanged -= this.OnPluginStatusChanged;
+        }
     }
 }

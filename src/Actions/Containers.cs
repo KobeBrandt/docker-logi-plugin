@@ -60,7 +60,7 @@ public class Containers : PluginDynamicFolder
 
     public override void RunCommand(String actionParameter)
     {
-        if (this.Plugin.EnsureDockerReady() && actionParameter != NavigateUpActionName)
+        if (DockerServices.StatusReporter.EnsureDockerReady() && actionParameter != NavigateUpActionName)
         {
             DockerServices.Operations.ToggleByDisplayName(actionParameter);
             DockerServices.StateMonitor.Refresh();

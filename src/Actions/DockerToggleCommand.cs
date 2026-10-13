@@ -49,7 +49,7 @@ public abstract class DockerToggleCommand : PluginDynamicCommand
 
     protected override void RunCommand(String actionParameter)
     {
-        if (actionParameter == null || !this.Plugin.EnsureDockerReady())
+        if (actionParameter == null || !DockerServices.StatusReporter.EnsureDockerReady())
         {
             return;
         }

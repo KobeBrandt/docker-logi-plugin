@@ -36,6 +36,7 @@ public static class DockerConstants
     public static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
     public static readonly TimeSpan ApiProbeTimeout = TimeSpan.FromSeconds(1);
     public static readonly TimeSpan ContainerStatePollInterval = TimeSpan.FromSeconds(2);
+    public static readonly TimeSpan ReadinessPollInterval = TimeSpan.FromSeconds(10);
     public static readonly TimeSpan ActionLoadRefreshTimeout = TimeSpan.FromMilliseconds(500);
     public static readonly TimeSpan PollerStopTimeout = TimeSpan.FromSeconds(5);
 }
