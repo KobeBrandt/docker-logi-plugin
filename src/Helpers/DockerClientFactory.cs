@@ -8,9 +8,9 @@ public static class DockerClientFactory
         return new DockerApiClient(CreateHttpClient(locator), new ProcessRunner(), locator.FindCliExecutable());
     }
 
-    // Docker Desktop on Windows exposes the API over TCP; macOS and Linux only serve it on a Unix socket.
+    // Docker Desktop on Windows serves the API on a named pipe; macOS and Linux serve it on a Unix socket.
     private static HttpClient CreateHttpClient(DockerPathLocator locator) =>
         OperatingSystem.IsWindows()
-            ? DockerHttpClientFactory.CreateTcpClient()
+            ? DockerHttpClientFactory.CreateNamedPipeClient(DockerConstants.EnginePipeName)
             : DockerHttpClientFactory.CreateUnixSocketClient(locator.FindSocketPath);
 }

@@ -2,8 +2,9 @@ namespace Loupedeck.DockerPlugin.Helpers;
 
 public static class DockerConstants
 {
-    public const String ApiBaseUrl = "http://localhost:2375/";
-    public const String UnixSocketApiBaseUrl = "http://localhost/";
+    public const String LocalApiBaseUrl = "http://localhost/";
+    public const String EnginePipeName = "docker_engine";
+    public const String LocalPipeServer = ".";
     public const String SystemSocketPath = "/var/run/docker.sock";
     public const String ListAllContainersPath = "containers/json?all=1";
     public const String VersionPath = "version";
