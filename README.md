@@ -1,4 +1,4 @@
-# Docker Plugin for Logi Options+ / Loupedeck
+# Container Control for Docker
 
 Control Docker containers from a Logitech or Loupedeck device. Start, stop and toggle single containers, Docker Compose stacks or everything at once with a button press.
 
@@ -104,3 +104,7 @@ tests/
 ## License
 
 MIT. Report bugs and suggestions on the [issues page](https://github.com/KobeBrandt/docker-logi-plugin/issues).
+
+Icons are from [Font Awesome Free](https://fontawesome.com) by Fonticons, Inc., licensed under [CC BY 4.0](https://fontawesome.com/license/free). The plugin icon uses the same Font Awesome glyph as the container action icon.
+
+Docker and the Docker logo are trademarks of Docker, Inc. This plugin is not affiliated with or endorsed by Docker, Inc.

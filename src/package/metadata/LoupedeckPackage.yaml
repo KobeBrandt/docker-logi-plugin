@@ -9,10 +9,10 @@ type: plugin4
 name: Docker
 
 # Plugin name that is shown to the user.
-displayName: Docker
+displayName: Container Control for Docker
 
 # Short description of the plugin.
-description: Add a short description of the plugin here.
+description: Start, stop and toggle Docker containers and Docker Compose stacks from your Logitech or Loupedeck device. Unofficial plugin, not affiliated with or endorsed by Docker, Inc.
 
 # Name of the plugin library file.
 pluginFileName: DockerPlugin.dll
