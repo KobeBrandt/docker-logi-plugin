@@ -12,6 +12,9 @@ public class ContainerStateMonitorTests
     private readonly ContainerStateMonitor _monitor;
     private Int32 _changeCount;
 
+    private static readonly TimeSpan MaxWait = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan ShortWait = TimeSpan.FromMilliseconds(50);
+
     public ContainerStateMonitorTests()
     {
         this._monitor = new ContainerStateMonitor(this._client);
@@ -121,7 +124,7 @@ public class ContainerStateMonitorTests
     {
         this._client.Containers = [ContainerFactory.Running("a")];
 
-        this._monitor.RefreshIfNeverLoaded();
+        this._monitor.RefreshIfNeverLoaded(MaxWait);
 
         Assert.Same(this._client.Containers, this._monitor.Containers);
     }
@@ -134,8 +137,35 @@ public class ContainerStateMonitorTests
         var cached = this._monitor.Containers;
         this._client.Containers = [ContainerFactory.Stopped("a")];
 
-        this._monitor.RefreshIfNeverLoaded();
+        this._monitor.RefreshIfNeverLoaded(MaxWait);
 
         Assert.Same(cached, this._monitor.Containers);
+    }
+
+    [Fact]
+    public void RefreshIfNeverLoaded_SlowListing_ReturnsAfterMaxWaitAndLoadsLater()
+    {
+        var gate = new TaskCompletionSource();
+        var loaded = new ManualResetEventSlim();
+        this._monitor.StatesChanged += (_, _) => loaded.Set();
+        this._client.ListingGate = gate.Task;
+        this._client.Containers = [ContainerFactory.Running("a")];
+
+        this._monitor.RefreshIfNeverLoaded(ShortWait);
+        Assert.Null(this._monitor.Containers);
+
+        gate.SetResult();
+        Assert.True(loaded.Wait(MaxWait));
+        Assert.Same(this._client.Containers, this._monitor.Containers);
+    }
+
+    [Fact]
+    public void RefreshIfNeverLoaded_ListingThrows_LogsWithoutThrowing()
+    {
+        this._client.ListingFailure = new InvalidOperationException();
+
+        this._monitor.RefreshIfNeverLoaded(MaxWait);
+
+        Assert.Null(this._monitor.Containers);
     }
 }
