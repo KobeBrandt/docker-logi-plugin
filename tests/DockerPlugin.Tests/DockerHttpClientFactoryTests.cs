@@ -12,9 +12,19 @@ public class DockerHttpClientFactoryTests
 
     private static String MissingSocketPath() => Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.sock");
 
+    private static String MissingPipeName() => $"missing_{Guid.NewGuid():N}";
+
     [Fact]
-    public void CreateTcpClient_UsesTcpApiAddress() =>
-        Assert.Equal(new Uri(DockerConstants.ApiBaseUrl), DockerHttpClientFactory.CreateTcpClient().BaseAddress);
+    public void CreateNamedPipeClient_UsesLocalApiAddress() =>
+        Assert.Equal(new Uri(DockerConstants.LocalApiBaseUrl), DockerHttpClientFactory.CreateNamedPipeClient(MissingPipeName()).BaseAddress);
+
+    [Fact]
+    public void CreateNamedPipeClient_NullPipeName_Throws() =>
+        Assert.Throws<ArgumentNullException>(() => DockerHttpClientFactory.CreateNamedPipeClient(null));
+
+    [Fact]
+    public void CreateNamedPipeClient_MissingPipe_ApiReportedUnavailable() =>
+        Assert.False(CreateApiClient(DockerHttpClientFactory.CreateNamedPipeClient(MissingPipeName())).IsDockerApiAvailable());
 
     [Fact]
     public void CreateUnixSocketClient_UsesRequestTimeout() =>
@@ -28,8 +38,10 @@ public class DockerHttpClientFactoryTests
     public void CreateUnixSocketClient_MissingSocket_ApiReportedUnavailable()
     {
         var httpClient = DockerHttpClientFactory.CreateUnixSocketClient(MissingSocketPath);
-        var client = new DockerApiClient(httpClient, FakeProcessRunner.ExitingWith(DockerConstants.CliSuccessExitCode), CliPath);
 
-        Assert.False(client.IsDockerApiAvailable());
+        Assert.False(CreateApiClient(httpClient).IsDockerApiAvailable());
     }
+
+    private static DockerApiClient CreateApiClient(HttpClient httpClient) =>
+        new(httpClient, FakeProcessRunner.ExitingWith(DockerConstants.CliSuccessExitCode), CliPath);
 }

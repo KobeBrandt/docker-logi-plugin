@@ -24,8 +24,7 @@ Before each action runs, the plugin checks that Docker is running and that the A
 
 ## Docker setup
 
-- **Windows:** in Docker Desktop settings, enable "Expose daemon on tcp://localhost:2375 without TLS". The plugin calls the API at `http://localhost:2375/`.
-  This exposes the daemon without authentication to local processes. Only enable it on a machine you trust.
+- **Windows:** no setup needed. The plugin uses the Docker Desktop named pipe `\\.\pipe\docker_engine`, the same one the `docker` CLI uses. You do not need "Expose daemon on tcp://localhost:2375 without TLS". Your user must be allowed to use Docker (member of the `docker-users` group or an administrator).
 - **macOS:** no setup needed. The plugin uses the Docker socket at `/var/run/docker.sock`. If that socket does not exist, it falls back to `~/.docker/run/docker.sock` (Docker Desktop), `~/.orbstack/run/docker.sock` (OrbStack) or `~/.colima/default/docker.sock` (Colima).
 
 The plugin also runs `docker info` to check that Docker is running. The `docker` CLI must be on `PATH` or in a standard install location.
@@ -95,7 +94,8 @@ tests/
 | --- | --- | --- |
 | Docker not running | `docker info` exits with a non-zero code | Plugin status set to Error "Docker not running"; action does nothing |
 | Docker CLI missing | `docker` executable not found in the usual install locations or on `PATH`, or cannot be started (`Win32Exception` / `InvalidOperationException`) | Logged; treated as Docker not running |
-| Docker API unavailable | `GET /version` on `localhost:2375` (Windows) or the Docker socket (macOS) fails, times out (1 s) or returns non-success | Logged as warning; plugin status set to Error "Docker API not found" |
+| Docker API unavailable | `GET /version` on the `docker_engine` named pipe (Windows) or the Docker socket (macOS) fails, times out (1 s) or returns non-success | Logged as warning; plugin status set to Error "Docker API not found" |
+| Docker access denied | Windows user is not in the `docker-users` group and is not an administrator, so the named pipe refuses the connection | Same handling as Docker API unavailable |
 | Container listing failed | Docker API returns non-success, connection fails, request times out (30 s) or JSON is invalid | Logged; listboxes and folders show no containers; actions return failure |
 | Start/stop request failed | Docker API returns a status other than 2xx or 304, or the request fails | Logged; action returns failure. Bulk actions still try every remaining container |
 | Container or stack not found | Selected container ID, name or compose project no longer exists | Logged as warning; action returns failure |
